@@ -6,13 +6,13 @@ import { Plus, Copy, Edit, Trash2, ArrowLeft, Share2, Save, Download, FileText }
 
 // --- Firebase Initialization (Required for Canvas Environment) ---
 // 請在這裡貼回您的真實 Firebase 密碼
-const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-  // apiKey: "請換回您的密碼",
-  // authDomain: "請換回您的密碼",
-  // projectId: "請換回您的密碼",
-  // storageBucket: "請換回您的密碼",
-  // messagingSenderId: "請換回您的密碼",
-  // appId: "請換回您的密碼"
+const firebaseConfig = {
+  apiKey: "AIzaSyCrrRMUErKDGaUK4UlAxDpORe8_tLtURt8",
+  authDomain: "quoteapp-1f573.firebaseapp.com",
+  projectId: "quoteapp-1f573",
+  storageBucket: "quoteapp-1f573.firebasestorage.app",
+  messagingSenderId: "326503531698",
+  appId: "1:326503531698:web:bf60a72bb0cee0cf9975ab"
 };
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
