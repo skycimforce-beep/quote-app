@@ -5,22 +5,23 @@ import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc } from 'fi
 import { Plus, Copy, Edit, Trash2, ArrowLeft, Share2, Save, Download, FileText } from 'lucide-react';
 
 // --- Firebase Initialization (Required for Canvas Environment) ---
-const firebaseConfig = {
-  apiKey: "AIzaSyCrrRMUErKDGaUK4UlAxDpORe8_tLtURt8",
-  authDomain: "quoteapp-1f573.firebaseapp.com",
-  projectId: "quoteapp-1f573",
-  storageBucket: "quoteapp-1f573.firebasestorage.app",
-  messagingSenderId: "326503531698",
-  appId: "1:326503531698:web:bf60a72bb0cee0cf9975ab"
+// 請在這裡貼回您的真實 Firebase 密碼
+const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+  // apiKey: "請換回您的密碼",
+  // authDomain: "請換回您的密碼",
+  // projectId: "請換回您的密碼",
+  // storageBucket: "請換回您的密碼",
+  // messagingSenderId: "請換回您的密碼",
+  // appId: "請換回您的密碼"
 };
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'chaosheng-quote';
 
 // --- Components ---
 
-// 帶有特殊符號按鈕的輸入框
+// 帶有特殊符號按鈕的輸入框 (針對手機優化：縮小字體與按鈕間距)
 const SymbolInput = ({ label, value, onChange, placeholder }) => {
   const inputRef = useRef(null);
 
@@ -34,27 +35,27 @@ const SymbolInput = ({ label, value, onChange, placeholder }) => {
 
   return (
     <div className="flex flex-col mb-4">
-      <label className="text-xl font-bold text-gray-900 mb-2">{label}</label>
-      <div className="flex gap-2">
+      <label className="text-lg font-bold text-gray-900 mb-1">{label}</label>
+      <div className="flex gap-1.5">
         <input
           ref={inputRef}
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="flex-1 p-4 text-xl border-2 border-gray-400 rounded-xl focus:border-blue-600 focus:ring-2 focus:ring-blue-600 outline-none"
+          className="flex-1 p-3 text-lg border-2 border-gray-400 rounded-xl focus:border-blue-600 focus:ring-2 focus:ring-blue-600 outline-none w-full min-w-0"
         />
         <button
           type="button"
           onClick={() => insertSymbol('Ø')}
-          className="px-4 py-2 bg-gray-200 text-2xl font-bold rounded-xl border-2 border-gray-400 active:bg-gray-300"
+          className="px-3 py-2 bg-gray-200 text-xl font-bold rounded-xl border-2 border-gray-400 active:bg-gray-300 flex-shrink-0"
         >
           Ø
         </button>
         <button
           type="button"
           onClick={() => insertSymbol('×')}
-          className="px-4 py-2 bg-gray-200 text-2xl font-bold rounded-xl border-2 border-gray-400 active:bg-gray-300"
+          className="px-3 py-2 bg-gray-200 text-xl font-bold rounded-xl border-2 border-gray-400 active:bg-gray-300 flex-shrink-0"
         >
           ×
         </button>
@@ -63,16 +64,16 @@ const SymbolInput = ({ label, value, onChange, placeholder }) => {
   );
 };
 
-// 一般大字體輸入框
+// 一般大字體輸入框 (針對手機優化：微調字體大小與內距)
 const BigInput = ({ label, type = "text", value, onChange, placeholder, isNumber = false }) => (
-  <div className="flex flex-col mb-4">
-    <label className="text-xl font-bold text-gray-900 mb-2">{label}</label>
+  <div className="flex flex-col mb-3">
+    <label className="text-lg font-bold text-gray-900 mb-1">{label}</label>
     <input
       type={isNumber ? "number" : type}
       value={value}
       onChange={(e) => onChange(isNumber ? (e.target.value === '' ? '' : Number(e.target.value)) : e.target.value)}
       placeholder={placeholder}
-      className="p-4 text-xl border-2 border-gray-400 rounded-xl focus:border-blue-600 focus:ring-2 focus:ring-blue-600 outline-none w-full"
+      className="p-3 text-lg border-2 border-gray-400 rounded-xl focus:border-blue-600 focus:ring-2 focus:ring-blue-600 outline-none w-full"
     />
   </div>
 );
@@ -240,11 +241,6 @@ export default function App() {
     if (currentQuote.taxType === 'exclude') {
       tax = Math.round(subtotal * 0.05);
       total = subtotal + tax;
-    } else if (currentQuote.taxType === 'include') {
-      // 內含稅的算法 (看習慣，通常總價不變，稅金是總價/1.05*0.05)
-      // 但一般工程行未稅加稅比較常見，這裡提供基礎選項
-      total = subtotal;
-      tax = Math.round(total - (total / 1.05));
     }
 
     return { subtotal, tax, total };
@@ -309,7 +305,6 @@ export default function App() {
     }
   };
 
-
   // --- Views ---
 
   if (!user) {
@@ -327,44 +322,44 @@ export default function App() {
         <main className="p-4 max-w-2xl mx-auto">
           <button 
             onClick={handleNewQuote}
-            className="w-full bg-blue-600 text-white font-bold text-2xl py-6 rounded-2xl shadow-lg flex items-center justify-center gap-3 mb-8 active:bg-blue-700"
+            className="w-full bg-blue-600 text-white font-bold text-2xl py-5 rounded-2xl shadow-lg flex items-center justify-center gap-3 mb-6 active:bg-blue-700"
           >
             <Plus size={32} /> 新增報價單
           </button>
 
-          <h2 className="text-xl font-bold text-gray-700 mb-4 px-2">歷史報價單</h2>
+          <h2 className="text-xl font-bold text-gray-700 mb-3 px-2">歷史紀錄</h2>
           
           {quotes.length === 0 ? (
-            <div className="text-center text-gray-500 py-10 text-xl">目前還沒有報價單喔！</div>
+            <div className="text-center text-gray-500 py-10 text-lg">目前還沒有報價單喔！</div>
           ) : (
             <div className="space-y-4">
               {quotes.map(quote => (
                 <div key={quote.id} className="bg-white p-5 rounded-2xl shadow border-l-8 border-blue-500">
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <h3 className="text-2xl font-bold text-gray-900">{quote.clientName || '未命名業主'}</h3>
-                      <p className="text-lg text-gray-600 mt-1">{quote.projectName || '未填寫工程名稱'}</p>
-                      <p className="text-md text-gray-500 mt-1">{quote.date}</p>
+                      <h3 className="text-xl font-bold text-gray-900">{quote.clientName || '未命名業主'}</h3>
+                      <p className="text-md text-gray-600 mt-1">{quote.projectName || '未填寫工程名稱'}</p>
+                      <p className="text-sm text-gray-500 mt-1">{quote.date}</p>
                     </div>
                   </div>
                   <div className="flex gap-2">
                     <button 
                       onClick={() => handleEditQuote(quote)}
-                      className="flex-1 bg-gray-100 text-gray-800 py-3 rounded-xl font-bold text-lg flex justify-center items-center gap-2 border-2 border-gray-200 active:bg-gray-200"
+                      className="flex-1 bg-gray-100 text-gray-800 py-2.5 rounded-xl font-bold flex justify-center items-center gap-2 border-2 border-gray-200 active:bg-gray-200"
                     >
-                      <Edit size={20} /> 編輯
+                      <Edit size={18} /> 編輯
                     </button>
                     <button 
                       onClick={() => handleDuplicateQuote(quote)}
-                      className="flex-1 bg-green-100 text-green-800 py-3 rounded-xl font-bold text-lg flex justify-center items-center gap-2 border-2 border-green-200 active:bg-green-200"
+                      className="flex-1 bg-green-100 text-green-800 py-2.5 rounded-xl font-bold flex justify-center items-center gap-2 border-2 border-green-200 active:bg-green-200"
                     >
-                      <Copy size={20} /> 複製
+                      <Copy size={18} /> 複製
                     </button>
                     <button 
                       onClick={() => handleDeleteQuote(quote.id)}
-                      className="bg-red-100 text-red-600 px-4 py-3 rounded-xl font-bold border-2 border-red-200 active:bg-red-200"
+                      className="bg-red-100 text-red-600 px-4 py-2.5 rounded-xl font-bold border-2 border-red-200 active:bg-red-200"
                     >
-                      <Trash2 size={20} />
+                      <Trash2 size={18} />
                     </button>
                   </div>
                 </div>
@@ -383,38 +378,44 @@ export default function App() {
         {/* 頂部導航 */}
         <header className="bg-white p-4 shadow-sm sticky top-0 z-10 flex justify-between items-center border-b-2 border-gray-200">
           <button onClick={() => setView('list')} className="p-2 text-gray-600 active:bg-gray-100 rounded-full">
-            <ArrowLeft size={32} />
+            <ArrowLeft size={28} />
           </button>
-          <h1 className="text-2xl font-bold">編輯報價單</h1>
+          <h1 className="text-xl font-bold">編輯報價單</h1>
           <button onClick={async () => { await handleSaveQuote(); setView('list'); }} className="p-2 text-blue-600 active:bg-blue-50 rounded-full">
-            <Save size={32} />
+            <Save size={28} />
           </button>
         </header>
 
-        <main className="p-4 max-w-2xl mx-auto">
-          {/* 基本資料卡片 */}
-          <div className="bg-white p-5 rounded-2xl shadow-sm border-2 border-gray-200 mb-6">
-            <h2 className="text-2xl font-black mb-4 border-b pb-2 text-blue-700">基本資料</h2>
+        <main className="p-3 max-w-2xl mx-auto">
+          {/* 基本資料卡片：手機版單行排列，避免擠壓 */}
+          <div className="bg-white p-4 rounded-2xl shadow-sm border-2 border-gray-200 mb-5">
+            <h2 className="text-xl font-black mb-3 border-b pb-2 text-blue-700">基本資料</h2>
             <BigInput label="業主名稱" value={currentQuote.clientName} onChange={(v) => updateCurrentQuote('clientName', v)} placeholder="例如：王小明" />
             <BigInput label="工程名稱" value={currentQuote.projectName} onChange={(v) => updateCurrentQuote('projectName', v)} placeholder="例如：廠房排風管工程" />
-            <div className="grid grid-cols-2 gap-4">
-              <BigInput label="日期" type="date" value={currentQuote.date} onChange={(v) => updateCurrentQuote('date', v)} />
-              <BigInput label="統一編號" value={currentQuote.taxId} onChange={(v) => updateCurrentQuote('taxId', v)} />
+            
+            {/* 調整為手機版直排，平板版並排 */}
+            <div className="flex flex-col sm:flex-row sm:gap-4">
+              <div className="w-full">
+                <BigInput label="日期" type="date" value={currentQuote.date} onChange={(v) => updateCurrentQuote('date', v)} />
+              </div>
+              <div className="w-full">
+                <BigInput label="統一編號" value={currentQuote.taxId} onChange={(v) => updateCurrentQuote('taxId', v)} />
+              </div>
             </div>
           </div>
 
           {/* 工程項目卡片 */}
-          <div className="mb-6">
-            <h2 className="text-2xl font-black mb-4 px-2 text-blue-700">工程項目</h2>
+          <div className="mb-5">
+            <h2 className="text-xl font-black mb-3 px-2 text-blue-700">工程項目</h2>
             
             {currentQuote.items.map((item, index) => (
-              <div key={item.id} className="bg-white p-5 rounded-2xl shadow-sm border-2 border-gray-200 mb-4 relative">
-                <div className="absolute -top-3 -left-3 bg-blue-600 text-white w-8 h-8 flex items-center justify-center rounded-full font-bold text-lg">
+              <div key={item.id} className="bg-white p-4 rounded-2xl shadow-sm border-2 border-gray-200 mb-4 relative">
+                <div className="absolute -top-3 -left-3 bg-blue-600 text-white w-7 h-7 flex items-center justify-center rounded-full font-bold text-sm shadow-md">
                   {index + 1}
                 </div>
                 {currentQuote.items.length > 1 && (
-                  <button onClick={() => removeItem(index)} className="absolute top-4 right-4 text-red-500 p-2">
-                    <Trash2 size={28} />
+                  <button onClick={() => removeItem(index)} className="absolute top-2 right-2 text-red-500 p-2">
+                    <Trash2 size={24} />
                   </button>
                 )}
                 
@@ -426,35 +427,40 @@ export default function App() {
                     placeholder="例如：螺旋風管"
                   />
                   
-                  <div className="grid grid-cols-3 gap-2 mb-4">
-                    <BigInput label="數量" isNumber value={item.qty} onChange={(v) => updateItem(index, 'qty', v)} />
-                    <div className="flex flex-col mb-4">
-                      <label className="text-xl font-bold text-gray-900 mb-2">單位</label>
-                      <input
-                        type="text"
-                        value={item.unit}
-                        onChange={(e) => updateItem(index, 'unit', e.target.value)}
-                        placeholder="式/尺"
-                        className="p-4 text-xl border-2 border-gray-400 rounded-xl focus:border-blue-600 outline-none w-full"
-                      />
-                    </div>
-                    <BigInput label="單價" isNumber value={item.price} onChange={(v) => updateItem(index, 'price', v)} />
+                  {/* 數量、單位、單價區塊：調整比例 */}
+                  <div className="flex gap-2 mb-3">
+                     <div className="w-1/4">
+                       <BigInput label="數量" isNumber value={item.qty} onChange={(v) => updateItem(index, 'qty', v)} placeholder="1" />
+                     </div>
+                     <div className="w-1/4 flex flex-col mb-3">
+                       <label className="text-lg font-bold text-gray-900 mb-1">單位</label>
+                       <input
+                         type="text"
+                         value={item.unit}
+                         onChange={(e) => updateItem(index, 'unit', e.target.value)}
+                         placeholder="式/尺"
+                         className="p-3 text-lg border-2 border-gray-400 rounded-xl focus:border-blue-600 outline-none w-full"
+                       />
+                     </div>
+                     <div className="w-2/4">
+                       <BigInput label="單價" isNumber value={item.price} onChange={(v) => updateItem(index, 'price', v)} placeholder="0" />
+                     </div>
                   </div>
 
-                  <div className="bg-blue-50 p-4 rounded-xl flex justify-between items-center mb-4">
-                    <span className="text-xl font-bold text-gray-700">此項小計：</span>
-                    <span className="text-2xl font-black text-blue-700">
+                  <div className="bg-blue-50 p-3 rounded-xl flex justify-between items-center mb-3">
+                    <span className="text-lg font-bold text-gray-700">小計：</span>
+                    <span className="text-xl font-black text-blue-700">
                       ${((Number(item.qty) || 0) * (Number(item.price) || 0)).toLocaleString()}
                     </span>
                   </div>
 
                   <div className="flex flex-col">
-                    <label className="text-lg font-bold text-gray-600 mb-2">備註</label>
+                    <label className="text-md font-bold text-gray-600 mb-1">備註</label>
                     <input
                       type="text"
                       value={item.remark}
                       onChange={(e) => updateItem(index, 'remark', e.target.value)}
-                      className="p-3 text-lg border-2 border-gray-300 rounded-xl outline-none"
+                      className="p-2.5 text-md border-2 border-gray-300 rounded-xl outline-none"
                     />
                   </div>
                 </div>
@@ -463,58 +469,58 @@ export default function App() {
 
             <button 
               onClick={addItem}
-              className="w-full bg-gray-200 text-gray-800 font-bold text-xl py-4 rounded-2xl border-2 border-gray-300 flex items-center justify-center gap-2 active:bg-gray-300"
+              className="w-full bg-gray-200 text-gray-800 font-bold text-lg py-3 rounded-2xl border-2 border-gray-300 flex items-center justify-center gap-2 active:bg-gray-300 shadow-sm"
             >
-              <Plus size={24} /> 加入新項目
+              <Plus size={20} /> 加入新項目
             </button>
           </div>
 
           {/* 稅金設定 */}
-          <div className="bg-white p-5 rounded-2xl shadow-sm border-2 border-gray-200 mb-6">
-            <h2 className="text-2xl font-black mb-4 border-b pb-2 text-blue-700">稅金計算</h2>
-            <div className="flex flex-col gap-3">
-              <label className="flex items-center gap-4 p-4 border-2 rounded-xl active:bg-gray-50">
+          <div className="bg-white p-4 rounded-2xl shadow-sm border-2 border-gray-200 mb-6">
+            <h2 className="text-xl font-black mb-3 border-b pb-2 text-blue-700">稅金計算</h2>
+            <div className="flex flex-col gap-2">
+              <label className="flex items-center gap-3 p-3 border-2 rounded-xl active:bg-gray-50">
                 <input 
                   type="radio" 
                   name="tax" 
-                  className="w-6 h-6" 
+                  className="w-5 h-5" 
                   checked={currentQuote.taxType === 'none'} 
                   onChange={() => updateCurrentQuote('taxType', 'none')} 
                 />
-                <span className="text-2xl font-bold">不計算稅金</span>
+                <span className="text-lg font-bold">不計算稅金</span>
               </label>
-              <label className="flex items-center gap-4 p-4 border-2 rounded-xl active:bg-gray-50">
+              <label className="flex items-center gap-3 p-3 border-2 rounded-xl active:bg-gray-50">
                 <input 
                   type="radio" 
                   name="tax" 
-                  className="w-6 h-6" 
+                  className="w-5 h-5" 
                   checked={currentQuote.taxType === 'exclude'} 
                   onChange={() => updateCurrentQuote('taxType', 'exclude')} 
                 />
-                <span className="text-2xl font-bold">外加 5% 稅金</span>
+                <span className="text-lg font-bold">外加 5% 稅金</span>
               </label>
             </div>
           </div>
         </main>
 
         {/* 底部固定總計與動作列 */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t-4 border-gray-200 p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-20">
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t-4 border-gray-200 p-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-20">
           <div className="max-w-2xl mx-auto">
-            <div className="flex justify-between items-end mb-3">
-              <div className="text-gray-600 font-bold">
+            <div className="flex justify-between items-end mb-2 px-1">
+              <div className="text-gray-600 font-bold text-sm">
                 {currentQuote.taxType === 'exclude' && <span>稅金：${totals.tax.toLocaleString()}</span>}
               </div>
               <div className="text-right">
-                <div className="text-sm text-gray-500 font-bold">總金額</div>
-                <div className="text-4xl font-black text-red-600">${totals.total.toLocaleString()}</div>
+                <div className="text-xs text-gray-500 font-bold">總金額</div>
+                <div className="text-2xl font-black text-red-600">${totals.total.toLocaleString()}</div>
               </div>
             </div>
-            <div className="flex gap-3">
+            <div className="flex gap-2">
               <button 
                 onClick={async () => { await handleSaveQuote(); setView('preview'); }}
-                className="flex-1 bg-blue-600 text-white py-4 rounded-xl font-bold text-2xl flex justify-center items-center gap-2 active:bg-blue-700"
+                className="flex-1 bg-blue-600 text-white py-3.5 rounded-xl font-bold text-xl flex justify-center items-center gap-2 active:bg-blue-700"
               >
-                <FileText size={28} /> 預覽與傳送
+                <FileText size={24} /> 預覽與傳送
               </button>
             </div>
           </div>
@@ -523,7 +529,7 @@ export default function App() {
     );
   }
 
-  // 3. 預覽畫面 (準備產生 PDF)
+  // 3. 預覽畫面 (準備產生 PDF) - PDF 排版完全不變
   if (view === 'preview') {
     // 預先計算分頁與預留總計空間
     const MAX_ROWS = 18;
@@ -554,9 +560,9 @@ export default function App() {
       <div className="min-h-screen bg-gray-600 pb-32">
          <header className="bg-white p-4 shadow-sm sticky top-0 z-30 flex justify-between items-center">
           <button onClick={() => setView('edit')} className="p-2 text-gray-600 active:bg-gray-100 rounded-full">
-            <ArrowLeft size={32} />
+            <ArrowLeft size={28} />
           </button>
-          <h1 className="text-2xl font-bold">報價單預覽</h1>
+          <h1 className="text-xl font-bold">報價單預覽</h1>
           <div className="w-10"></div>
         </header>
 
@@ -711,7 +717,7 @@ export default function App() {
           <button 
             onClick={generateAndSharePDF}
             disabled={isGenerating}
-            className={`w-full max-w-2xl mx-auto py-5 rounded-2xl font-black text-2xl flex justify-center items-center gap-3 ${
+            className={`w-full max-w-2xl mx-auto py-4 rounded-2xl font-black text-xl flex justify-center items-center gap-3 ${
               isGenerating ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#06C755] active:bg-[#05b04b] text-white'
             }`}
           >
@@ -719,7 +725,7 @@ export default function App() {
                <span>產生文件中...</span>
             ) : (
                <>
-                 <Share2 size={32} />
+                 <Share2 size={28} />
                  一鍵傳送至 LINE
                </>
             )}
