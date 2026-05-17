@@ -21,7 +21,7 @@ const appId = typeof __app_id !== 'undefined' ? __app_id : 'chaosheng-quote';
 
 // --- Components ---
 
-// 帶有特殊符號按鈕的輸入框 (針對手機優化：縮小字體與按鈕間距)
+// 帶有特殊符號按鈕的輸入框 (強制白底黑字、防跑版)
 const SymbolInput = ({ label, value, onChange, placeholder }) => {
   const inputRef = useRef(null);
 
@@ -43,19 +43,19 @@ const SymbolInput = ({ label, value, onChange, placeholder }) => {
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="flex-1 p-3 text-lg border-2 border-gray-400 rounded-xl focus:border-blue-600 focus:ring-2 focus:ring-blue-600 outline-none w-full min-w-0"
+          className="flex-1 p-3 text-lg border-2 border-gray-400 rounded-xl focus:border-blue-600 focus:ring-2 focus:ring-blue-600 outline-none w-full min-w-0 bg-white text-gray-900 appearance-none"
         />
         <button
           type="button"
           onClick={() => insertSymbol('Ø')}
-          className="px-3 py-2 bg-gray-200 text-xl font-bold rounded-xl border-2 border-gray-400 active:bg-gray-300 flex-shrink-0"
+          className="px-3 py-2 bg-gray-200 text-gray-900 text-xl font-bold rounded-xl border-2 border-gray-400 active:bg-gray-300 flex-shrink-0"
         >
           Ø
         </button>
         <button
           type="button"
           onClick={() => insertSymbol('×')}
-          className="px-3 py-2 bg-gray-200 text-xl font-bold rounded-xl border-2 border-gray-400 active:bg-gray-300 flex-shrink-0"
+          className="px-3 py-2 bg-gray-200 text-gray-900 text-xl font-bold rounded-xl border-2 border-gray-400 active:bg-gray-300 flex-shrink-0"
         >
           ×
         </button>
@@ -64,16 +64,17 @@ const SymbolInput = ({ label, value, onChange, placeholder }) => {
   );
 };
 
-// 一般大字體輸入框 (針對手機優化：微調字體大小與內距)
+// 一般大字體輸入框 (加入 inputMode 支援數字小鍵盤，強制白底黑字)
 const BigInput = ({ label, type = "text", value, onChange, placeholder, isNumber = false }) => (
-  <div className="flex flex-col mb-3">
+  <div className="flex flex-col mb-3 min-w-0">
     <label className="text-lg font-bold text-gray-900 mb-1">{label}</label>
     <input
       type={isNumber ? "number" : type}
+      inputMode={isNumber ? "decimal" : undefined}
       value={value}
       onChange={(e) => onChange(isNumber ? (e.target.value === '' ? '' : Number(e.target.value)) : e.target.value)}
       placeholder={placeholder}
-      className="p-3 text-lg border-2 border-gray-400 rounded-xl focus:border-blue-600 focus:ring-2 focus:ring-blue-600 outline-none w-full"
+      className="p-3 text-lg border-2 border-gray-400 rounded-xl focus:border-blue-600 focus:ring-2 focus:ring-blue-600 outline-none w-full min-w-0 bg-white text-gray-900 appearance-none"
     />
   </div>
 );
@@ -205,7 +206,8 @@ export default function App() {
   const updateItem = (index, field, value) => {
     setCurrentQuote(prev => {
       const newItems = [...prev.items];
-      newItems[index][field] = value;
+      // 深度拷貝當前修改的項目，確保 React 偵測到物件更新並重新渲染總計
+      newItems[index] = { ...newItems[index], [field]: value };
       return { ...prev, items: newItems };
     });
   };
@@ -257,24 +259,25 @@ export default function App() {
     
     setIsGenerating(true);
     try {
-      // 抓取所有產生的 A4 頁面
+      // 確保網頁捲動到最頂部，這是解決 iOS html2canvas 破圖/空白的關鍵
+      window.scrollTo(0, 0);
+
       const pages = document.querySelectorAll('.pdf-page-container');
       const { jsPDF } = window.jspdf;
       const pdf = new jsPDF('p', 'mm', 'a4');
       
       for (let i = 0; i < pages.length; i++) {
-        // 為了確保畫質，提高 scale
         const canvas = await window.html2canvas(pages[i], { 
           scale: 2,
           useCORS: true,
-          logging: false
+          logging: false,
+          backgroundColor: '#ffffff' // 強制白底
         });
         
         const imgData = canvas.toDataURL('image/png');
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
         
-        // 如果不是第一頁，就新增一頁空白頁
         if (i > 0) {
           pdf.addPage();
         }
@@ -285,7 +288,7 @@ export default function App() {
       const pdfBlob = pdf.output('blob');
       const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
 
-      // 嘗試使用 Web Share API (iOS 支援直接分享檔案至 LINE)
+      // iOS Web Share API
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
@@ -293,7 +296,6 @@ export default function App() {
           text: '您好，附上報價單供您參考，謝謝。'
         });
       } else {
-        // 退回方案：直接下載
         pdf.save(fileName);
         alert('檔案已下載！您可以手動傳送。');
       }
@@ -308,13 +310,13 @@ export default function App() {
   // --- Views ---
 
   if (!user) {
-    return <div className="flex items-center justify-center h-screen text-2xl font-bold">載入中...</div>;
+    return <div className="flex items-center justify-center h-screen text-2xl font-bold bg-white text-black">載入中...</div>;
   }
 
   // 1. 列表畫面
   if (view === 'list') {
     return (
-      <div className="min-h-screen bg-gray-100 pb-20">
+      <div className="min-h-screen bg-gray-100 pb-20" style={{ colorScheme: 'light' }}>
         <header className="bg-blue-600 text-white p-6 shadow-md rounded-b-2xl">
           <h1 className="text-3xl font-black tracking-wider text-center">超盛報價單系統</h1>
         </header>
@@ -374,31 +376,31 @@ export default function App() {
   // 2. 編輯畫面
   if (view === 'edit' && currentQuote) {
     return (
-      <div className="min-h-screen bg-gray-50 pb-32">
+      <div className="min-h-screen bg-gray-50 pb-32" style={{ colorScheme: 'light' }}>
         {/* 頂部導航 */}
         <header className="bg-white p-4 shadow-sm sticky top-0 z-10 flex justify-between items-center border-b-2 border-gray-200">
           <button onClick={() => setView('list')} className="p-2 text-gray-600 active:bg-gray-100 rounded-full">
             <ArrowLeft size={28} />
           </button>
-          <h1 className="text-xl font-bold">編輯報價單</h1>
+          <h1 className="text-xl font-bold text-black">編輯報價單</h1>
           <button onClick={async () => { await handleSaveQuote(); setView('list'); }} className="p-2 text-blue-600 active:bg-blue-50 rounded-full">
             <Save size={28} />
           </button>
         </header>
 
         <main className="p-3 max-w-2xl mx-auto">
-          {/* 基本資料卡片：手機版單行排列，避免擠壓 */}
+          {/* 基本資料卡片 */}
           <div className="bg-white p-4 rounded-2xl shadow-sm border-2 border-gray-200 mb-5">
             <h2 className="text-xl font-black mb-3 border-b pb-2 text-blue-700">基本資料</h2>
             <BigInput label="業主名稱" value={currentQuote.clientName} onChange={(v) => updateCurrentQuote('clientName', v)} placeholder="例如：王小明" />
             <BigInput label="工程名稱" value={currentQuote.projectName} onChange={(v) => updateCurrentQuote('projectName', v)} placeholder="例如：廠房排風管工程" />
             
-            {/* 調整為手機版直排，平板版並排 */}
-            <div className="flex flex-col sm:flex-row sm:gap-4">
-              <div className="w-full">
+            {/* 針對日期寬度溢出的修復：加入 min-w-0 與 overflow-hidden */}
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 overflow-hidden">
+              <div className="w-full min-w-0">
                 <BigInput label="日期" type="date" value={currentQuote.date} onChange={(v) => updateCurrentQuote('date', v)} />
               </div>
-              <div className="w-full">
+              <div className="w-full min-w-0">
                 <BigInput label="統一編號" value={currentQuote.taxId} onChange={(v) => updateCurrentQuote('taxId', v)} />
               </div>
             </div>
@@ -427,22 +429,22 @@ export default function App() {
                     placeholder="例如：螺旋風管"
                   />
                   
-                  {/* 數量、單位、單價區塊：調整比例 */}
+                  {/* 數量、單位、單價區塊：確保 min-w-0 防止爆版 */}
                   <div className="flex gap-2 mb-3">
-                     <div className="w-1/4">
+                     <div className="w-1/4 min-w-0">
                        <BigInput label="數量" isNumber value={item.qty} onChange={(v) => updateItem(index, 'qty', v)} placeholder="1" />
                      </div>
-                     <div className="w-1/4 flex flex-col mb-3">
+                     <div className="w-1/4 flex flex-col mb-3 min-w-0">
                        <label className="text-lg font-bold text-gray-900 mb-1">單位</label>
                        <input
                          type="text"
                          value={item.unit}
                          onChange={(e) => updateItem(index, 'unit', e.target.value)}
                          placeholder="式/尺"
-                         className="p-3 text-lg border-2 border-gray-400 rounded-xl focus:border-blue-600 outline-none w-full"
+                         className="p-3 text-lg border-2 border-gray-400 rounded-xl focus:border-blue-600 outline-none w-full min-w-0 bg-white text-gray-900 appearance-none"
                        />
                      </div>
-                     <div className="w-2/4">
+                     <div className="w-2/4 min-w-0">
                        <BigInput label="單價" isNumber value={item.price} onChange={(v) => updateItem(index, 'price', v)} placeholder="0" />
                      </div>
                   </div>
@@ -454,13 +456,13 @@ export default function App() {
                     </span>
                   </div>
 
-                  <div className="flex flex-col">
-                    <label className="text-md font-bold text-gray-600 mb-1">備註</label>
+                  <div className="flex flex-col min-w-0">
+                    <label className="text-md font-bold text-gray-900 mb-1">備註</label>
                     <input
                       type="text"
                       value={item.remark}
                       onChange={(e) => updateItem(index, 'remark', e.target.value)}
-                      className="p-2.5 text-md border-2 border-gray-300 rounded-xl outline-none"
+                      className="p-2.5 text-md border-2 border-gray-400 rounded-xl outline-none w-full min-w-0 bg-white text-gray-900 appearance-none"
                     />
                   </div>
                 </div>
@@ -469,17 +471,17 @@ export default function App() {
 
             <button 
               onClick={addItem}
-              className="w-full bg-gray-200 text-gray-800 font-bold text-lg py-3 rounded-2xl border-2 border-gray-300 flex items-center justify-center gap-2 active:bg-gray-300 shadow-sm"
+              className="w-full bg-gray-200 text-gray-900 font-bold text-lg py-3 rounded-2xl border-2 border-gray-400 flex items-center justify-center gap-2 active:bg-gray-300 shadow-sm"
             >
               <Plus size={20} /> 加入新項目
             </button>
           </div>
 
           {/* 稅金設定 */}
-          <div className="bg-white p-4 rounded-2xl shadow-sm border-2 border-gray-200 mb-6">
+          <div className="bg-white p-4 rounded-2xl shadow-sm border-2 border-gray-200 mb-6 text-gray-900">
             <h2 className="text-xl font-black mb-3 border-b pb-2 text-blue-700">稅金計算</h2>
             <div className="flex flex-col gap-2">
-              <label className="flex items-center gap-3 p-3 border-2 rounded-xl active:bg-gray-50">
+              <label className="flex items-center gap-3 p-3 border-2 border-gray-200 rounded-xl active:bg-gray-50">
                 <input 
                   type="radio" 
                   name="tax" 
@@ -489,7 +491,7 @@ export default function App() {
                 />
                 <span className="text-lg font-bold">不計算稅金</span>
               </label>
-              <label className="flex items-center gap-3 p-3 border-2 rounded-xl active:bg-gray-50">
+              <label className="flex items-center gap-3 p-3 border-2 border-gray-200 rounded-xl active:bg-gray-50">
                 <input 
                   type="radio" 
                   name="tax" 
@@ -529,9 +531,8 @@ export default function App() {
     );
   }
 
-  // 3. 預覽畫面 (準備產生 PDF) - PDF 排版完全不變
+  // 3. 預覽畫面 (準備產生 PDF)
   if (view === 'preview') {
-    // 預先計算分頁與預留總計空間
     const MAX_ROWS = 18;
     const summaryRowsCount = currentQuote.taxType === 'exclude' ? 3 : 1;
     const itemChunks = [];
@@ -544,12 +545,10 @@ export default function App() {
       const remainingItems = totalItems - i;
       
       if (remainingItems + summaryRowsCount <= MAX_ROWS) {
-        // 目前頁面足以容納剩餘項目「與」總計區塊
         itemChunks.push(currentQuote.items.slice(i, i + remainingItems));
         isSummaryPlaced = true;
         break;
       } else {
-        // 空間不夠放總計，先塞滿項目
         const take = Math.min(remainingItems, MAX_ROWS);
         itemChunks.push(currentQuote.items.slice(i, i + take));
         i += take;
@@ -557,12 +556,12 @@ export default function App() {
     }
 
     return (
-      <div className="min-h-screen bg-gray-600 pb-32">
+      <div className="min-h-screen bg-gray-600 pb-32" style={{ colorScheme: 'light' }}>
          <header className="bg-white p-4 shadow-sm sticky top-0 z-30 flex justify-between items-center">
           <button onClick={() => setView('edit')} className="p-2 text-gray-600 active:bg-gray-100 rounded-full">
             <ArrowLeft size={28} />
           </button>
-          <h1 className="text-xl font-bold">報價單預覽</h1>
+          <h1 className="text-xl font-bold text-black">報價單預覽</h1>
           <div className="w-10"></div>
         </header>
 
@@ -571,18 +570,19 @@ export default function App() {
             const isLastPage = pageIndex === itemChunks.length - 1;
 
             return (
-              <div key={pageIndex} className="pdf-page-container bg-white shadow-2xl flex-shrink-0" style={{ width: '210mm', height: '297mm', padding: '4mm 7mm' }}>
-                 {/* 加入 font-bold 套用全域粗體，並使用標楷體 */}
-                 <div className="bg-white text-black font-bold relative" style={{ width: '196mm', height: '289mm', padding: '2mm 5mm', boxSizing: 'border-box', fontFamily: "'BiauKai', 'DFKai-SB', 'KaiTi', 'STKaiti', serif" }}>
+              /* 將 mm 替換為絕對 px 尺寸，解決 iOS PDF 跑版問題 */
+              <div key={pageIndex} className="pdf-page-container bg-white shadow-2xl flex-shrink-0" style={{ width: '794px', height: '1123px', padding: '15px 26px' }}>
+                 {/* 加入 iOS 專屬的楷體 Kaiti TC */}
+                 <div className="bg-white text-black font-bold relative" style={{ width: '742px', height: '1093px', padding: '8px 19px', boxSizing: 'border-box', fontFamily: "'Kaiti TC', 'STKaiti', 'BiauKai', 'DFKai-SB', 'KaiTi', serif" }}>
                     
-                    {/* 表頭：置中與排版 */}
+                    {/* 表頭 */}
                     <div className="text-center mb-2 mt-0">
-                      <h1 className="text-[44px] font-black tracking-widest">超盛工程行</h1>
+                      <h1 className="text-[44px] font-black tracking-widest text-black">超盛工程行</h1>
                     </div>
 
-                    {/* 聯絡資訊：加入 font-normal 取消粗體 */}
+                    {/* 聯絡資訊 */}
                     <div className="flex justify-end mb-4 font-normal">
-                      <div className="text-[14px] leading-tight text-left">
+                      <div className="text-[14px] leading-tight text-left text-black">
                         <p>地址：高雄市三民區澄清路649號7F-4</p>
                         <p>聯絡人：黃耀德 / 0925256521</p>
                         <p>統編：36905114</p>
@@ -592,19 +592,17 @@ export default function App() {
 
                     {/* 報價單標題 */}
                     <div className="text-center mb-6 relative">
-                      <h2 className="text-[32px] font-bold tracking-[0.5em] inline-block">報價單</h2>
-                      {/* 如果超過一頁，顯示頁次 */}
+                      <h2 className="text-[32px] font-bold tracking-[0.5em] inline-block text-black">報價單</h2>
                       {itemChunks.length > 1 && (
-                         <span className="absolute right-0 bottom-0 text-[14px] font-normal">頁次：{pageIndex + 1} / {itemChunks.length}</span>
+                         <span className="absolute right-0 bottom-0 text-[14px] font-normal text-black">頁次：{pageIndex + 1} / {itemChunks.length}</span>
                       )}
                     </div>
 
                     {/* 業主資訊 */}
-                    <div className="flex justify-between text-[16px] mb-3">
+                    <div className="flex justify-between text-[16px] mb-3 text-black">
                       <div>
                         <div className="flex mb-2 items-end">
                           <span className="w-24">業主名稱：</span>
-                          {/* 輸入的內容套用 font-normal (非粗體)，並移除底線 */}
                           <span className="min-w-[200px] font-normal inline-block">{currentQuote.clientName}</span>
                         </div>
                         <div className="flex items-end">
@@ -625,16 +623,16 @@ export default function App() {
                     </div>
 
                     {/* 表格 */}
-                    <table className="w-full border-collapse border border-black text-[15px]">
+                    <table className="w-full border-collapse border border-black text-[15px] text-black">
                       <thead>
                         <tr>
-                          <th className="border border-black p-2 w-12 text-center">項次</th>
-                          <th className="border border-black p-2 text-center">名稱</th>
-                          <th className="border border-black p-2 w-14 text-center">單位</th>
-                          <th className="border border-black p-2 w-16 text-center">數量</th>
-                          <th className="border border-black p-2 w-24 text-center">單價</th>
-                          <th className="border border-black p-2 w-28 text-center">複價</th>
-                          <th className="border border-black p-2 w-32 text-center">備註</th>
+                          <th className="border border-black p-2 w-12 text-center text-black">項次</th>
+                          <th className="border border-black p-2 text-center text-black">名稱</th>
+                          <th className="border border-black p-2 w-14 text-center text-black">單位</th>
+                          <th className="border border-black p-2 w-16 text-center text-black">數量</th>
+                          <th className="border border-black p-2 w-24 text-center text-black">單價</th>
+                          <th className="border border-black p-2 w-28 text-center text-black">複價</th>
+                          <th className="border border-black p-2 w-32 text-center text-black">備註</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -642,7 +640,6 @@ export default function App() {
                           const globalIdx = pageIndex * MAX_ROWS + idx;
                           return (
                             <tr key={item.id}>
-                              {/* 表格內容套用 font-normal */}
                               <td className="border border-black p-1.5 text-center font-normal">{globalIdx + 1}</td>
                               <td className="border border-black p-1.5 font-normal">{item.name}</td>
                               <td className="border border-black p-1.5 text-center font-normal">{item.unit}</td>
@@ -655,7 +652,6 @@ export default function App() {
                             </tr>
                           );
                         })}
-                        {/* 補足空行讓表格好看，並動態扣除總計區塊所佔的行數 */}
                         {(() => {
                           const blanksNeeded = isLastPage 
                             ? MAX_ROWS - chunk.length - summaryRowsCount 
@@ -674,7 +670,6 @@ export default function App() {
                           ));
                         })()}
                         
-                        {/* 總計與稅金只在最後一頁顯示 */}
                         {isLastPage ? (
                            <>
                              {currentQuote.taxType === 'exclude' && (
