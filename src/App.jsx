@@ -4,8 +4,8 @@ import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged }
 import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { Plus, Copy, Edit, Trash2, ArrowLeft, Share2, Save, Download, FileText } from 'lucide-react';
 
-// --- Firebase Initialization (Required for Canvas Environment) ---
-// 請在這裡貼回您的真實 Firebase 密碼
+// --- Firebase Initialization ---
+// ⚠️ 請在這裡貼回您的真實 Firebase 密碼
 const firebaseConfig = {
   apiKey: "AIzaSyCrrRMUErKDGaUK4UlAxDpORe8_tLtURt8",
   authDomain: "quoteapp-1f573.firebaseapp.com",
@@ -21,7 +21,7 @@ const appId = typeof __app_id !== 'undefined' ? __app_id : 'chaosheng-quote';
 
 // --- Components ---
 
-// 帶有特殊符號按鈕的輸入框 (強制白底黑字、防跑版)
+// 帶有特殊符號按鈕的輸入框
 const SymbolInput = ({ label, value, onChange, placeholder }) => {
   const inputRef = useRef(null);
 
@@ -64,7 +64,7 @@ const SymbolInput = ({ label, value, onChange, placeholder }) => {
   );
 };
 
-// 一般大字體輸入框 (加入 inputMode 支援數字小鍵盤，強制白底黑字)
+// 一般大字體輸入框 (修正 iOS 數字鍵盤導致總計不更新的 Bug)
 const BigInput = ({ label, type = "text", value, onChange, placeholder, isNumber = false }) => (
   <div className="flex flex-col mb-3 min-w-0">
     <label className="text-lg font-bold text-gray-900 mb-1">{label}</label>
@@ -72,7 +72,8 @@ const BigInput = ({ label, type = "text", value, onChange, placeholder, isNumber
       type={isNumber ? "number" : type}
       inputMode={isNumber ? "decimal" : undefined}
       value={value}
-      onChange={(e) => onChange(isNumber ? (e.target.value === '' ? '' : Number(e.target.value)) : e.target.value)}
+      // 取消原本強制轉換 Number 的設定，改用純字串更新以適應 iOS 小數點邏輯
+      onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       className="p-3 text-lg border-2 border-gray-400 rounded-xl focus:border-blue-600 focus:ring-2 focus:ring-blue-600 outline-none w-full min-w-0 bg-white text-gray-900 appearance-none"
     />
@@ -83,13 +84,23 @@ const BigInput = ({ label, type = "text", value, onChange, placeholder, isNumber
 export default function App() {
   const [user, setUser] = useState(null);
   const [quotes, setQuotes] = useState([]);
-  const [view, setView] = useState('list'); // 'list', 'edit', 'preview'
+  const [view, setView] = useState('list');
   const [currentQuote, setCurrentQuote] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [previewScale, setPreviewScale] = useState(1);
 
-  // 載入外部 PDF 生成套件
+  // 載入外部字體與 PDF 生成套件
   useEffect(() => {
-    const loadScripts = () => {
+    const loadDependencies = () => {
+      // 載入 100% 確保有楷體的 Google Web Font (霞鶩文楷)
+      if (!document.getElementById('lxgw-font')) {
+        const fontLink = document.createElement('link');
+        fontLink.id = 'lxgw-font';
+        fontLink.href = 'https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&display=swap';
+        fontLink.rel = 'stylesheet';
+        document.head.appendChild(fontLink);
+      }
+      
       if (!window.html2canvas) {
         const script1 = document.createElement('script');
         script1.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
@@ -101,8 +112,24 @@ export default function App() {
         document.head.appendChild(script2);
       }
     };
-    loadScripts();
+    loadDependencies();
   }, []);
+
+  // 計算並監聽手機螢幕寬度，動態縮放預覽畫面
+  useEffect(() => {
+    const updateScale = () => {
+      const width = window.innerWidth;
+      // 若螢幕寬度小於 A4 寬度 (794px) + 留白，則進行縮小
+      if (width < 820) {
+        setPreviewScale((width - 32) / 794);
+      } else {
+        setPreviewScale(1);
+      }
+    };
+    updateScale();
+    window.addEventListener('resize', updateScale);
+    return () => window.removeEventListener('resize', updateScale);
+  }, [view]);
 
   // Authentication
   useEffect(() => {
@@ -131,7 +158,7 @@ export default function App() {
       const fetchedQuotes = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
-      })).sort((a, b) => b.createdAt - a.createdAt); // 最新在前
+      })).sort((a, b) => b.createdAt - a.createdAt);
       setQuotes(fetchedQuotes);
     }, (error) => {
       console.error("Fetch Error:", error);
@@ -154,7 +181,7 @@ export default function App() {
     projectName: '',
     date: getToday(),
     taxId: '',
-    taxType: 'none', // 'none', 'include', 'exclude'
+    taxType: 'none', 
     items: [
       { id: generateId(), name: '', unit: '', qty: '', price: '', remark: '' }
     ]
@@ -167,7 +194,7 @@ export default function App() {
   };
 
   const handleEditQuote = (quote) => {
-    setCurrentQuote(JSON.parse(JSON.stringify(quote))); // Deep copy
+    setCurrentQuote(JSON.parse(JSON.stringify(quote)));
     setView('edit');
   };
 
@@ -175,7 +202,7 @@ export default function App() {
     const newQuote = JSON.parse(JSON.stringify(quote));
     newQuote.id = generateId();
     newQuote.createdAt = Date.now();
-    newQuote.date = getToday(); // 更新日期為今天
+    newQuote.date = getToday();
     await saveQuoteToDb(newQuote);
   };
 
@@ -206,7 +233,6 @@ export default function App() {
   const updateItem = (index, field, value) => {
     setCurrentQuote(prev => {
       const newItems = [...prev.items];
-      // 深度拷貝當前修改的項目，確保 React 偵測到物件更新並重新渲染總計
       newItems[index] = { ...newItems[index], [field]: value };
       return { ...prev, items: newItems };
     });
@@ -259,7 +285,11 @@ export default function App() {
     
     setIsGenerating(true);
     try {
-      // 確保網頁捲動到最頂部，這是解決 iOS html2canvas 破圖/空白的關鍵
+      // 等待外部楷體載入完成
+      if (document.fonts) {
+        await document.fonts.ready;
+      }
+
       window.scrollTo(0, 0);
 
       const pages = document.querySelectorAll('.pdf-page-container');
@@ -271,7 +301,7 @@ export default function App() {
           scale: 2,
           useCORS: true,
           logging: false,
-          backgroundColor: '#ffffff' // 強制白底
+          backgroundColor: '#ffffff'
         });
         
         const imgData = canvas.toDataURL('image/png');
@@ -288,7 +318,6 @@ export default function App() {
       const pdfBlob = pdf.output('blob');
       const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
 
-      // iOS Web Share API
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
@@ -377,7 +406,6 @@ export default function App() {
   if (view === 'edit' && currentQuote) {
     return (
       <div className="min-h-screen bg-gray-50 pb-32" style={{ colorScheme: 'light' }}>
-        {/* 頂部導航 */}
         <header className="bg-white p-4 shadow-sm sticky top-0 z-10 flex justify-between items-center border-b-2 border-gray-200">
           <button onClick={() => setView('list')} className="p-2 text-gray-600 active:bg-gray-100 rounded-full">
             <ArrowLeft size={28} />
@@ -389,13 +417,11 @@ export default function App() {
         </header>
 
         <main className="p-3 max-w-2xl mx-auto">
-          {/* 基本資料卡片 */}
           <div className="bg-white p-4 rounded-2xl shadow-sm border-2 border-gray-200 mb-5">
             <h2 className="text-xl font-black mb-3 border-b pb-2 text-blue-700">基本資料</h2>
             <BigInput label="業主名稱" value={currentQuote.clientName} onChange={(v) => updateCurrentQuote('clientName', v)} placeholder="例如：王小明" />
             <BigInput label="工程名稱" value={currentQuote.projectName} onChange={(v) => updateCurrentQuote('projectName', v)} placeholder="例如：廠房排風管工程" />
             
-            {/* 針對日期寬度溢出的修復：加入 min-w-0 與 overflow-hidden */}
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 overflow-hidden">
               <div className="w-full min-w-0">
                 <BigInput label="日期" type="date" value={currentQuote.date} onChange={(v) => updateCurrentQuote('date', v)} />
@@ -406,7 +432,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* 工程項目卡片 */}
           <div className="mb-5">
             <h2 className="text-xl font-black mb-3 px-2 text-blue-700">工程項目</h2>
             
@@ -429,7 +454,6 @@ export default function App() {
                     placeholder="例如：螺旋風管"
                   />
                   
-                  {/* 數量、單位、單價區塊：確保 min-w-0 防止爆版 */}
                   <div className="flex gap-2 mb-3">
                      <div className="w-1/4 min-w-0">
                        <BigInput label="數量" isNumber value={item.qty} onChange={(v) => updateItem(index, 'qty', v)} placeholder="1" />
@@ -477,7 +501,6 @@ export default function App() {
             </button>
           </div>
 
-          {/* 稅金設定 */}
           <div className="bg-white p-4 rounded-2xl shadow-sm border-2 border-gray-200 mb-6 text-gray-900">
             <h2 className="text-xl font-black mb-3 border-b pb-2 text-blue-700">稅金計算</h2>
             <div className="flex flex-col gap-2">
@@ -505,7 +528,6 @@ export default function App() {
           </div>
         </main>
 
-        {/* 底部固定總計與動作列 */}
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t-4 border-gray-200 p-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-20">
           <div className="max-w-2xl mx-auto">
             <div className="flex justify-between items-end mb-2 px-1">
@@ -565,142 +587,146 @@ export default function App() {
           <div className="w-10"></div>
         </header>
 
-        <main className="p-4 flex flex-col items-center overflow-x-auto gap-8">
+        <main className="p-4 flex flex-col items-center gap-8 mb-24 overflow-hidden">
           {itemChunks.map((chunk, pageIndex) => {
             const isLastPage = pageIndex === itemChunks.length - 1;
 
             return (
-              /* 將 mm 替換為絕對 px 尺寸，解決 iOS PDF 跑版問題 */
-              <div key={pageIndex} className="pdf-page-container bg-white shadow-2xl flex-shrink-0" style={{ width: '794px', height: '1123px', padding: '15px 26px' }}>
-                 {/* 加入 iOS 專屬的楷體 Kaiti TC */}
-                 <div className="bg-white text-black font-bold relative" style={{ width: '742px', height: '1093px', padding: '8px 19px', boxSizing: 'border-box', fontFamily: "'Kaiti TC', 'STKaiti', 'BiauKai', 'DFKai-SB', 'KaiTi', serif" }}>
-                    
-                    {/* 表頭 */}
-                    <div className="text-center mb-2 mt-0">
-                      <h1 className="text-[44px] font-black tracking-widest text-black">超盛工程行</h1>
-                    </div>
-
-                    {/* 聯絡資訊 */}
-                    <div className="flex justify-end mb-4 font-normal">
-                      <div className="text-[14px] leading-tight text-left text-black">
-                        <p>地址：高雄市三民區澄清路649號7F-4</p>
-                        <p>聯絡人：黃耀德 / 0925256521</p>
-                        <p>統編：36905114</p>
-                        <p>E-mail：c1207031@yahoo.com.tw</p>
-                      </div>
-                    </div>
-
-                    {/* 報價單標題 */}
-                    <div className="text-center mb-6 relative">
-                      <h2 className="text-[32px] font-bold tracking-[0.5em] inline-block text-black">報價單</h2>
-                      {itemChunks.length > 1 && (
-                         <span className="absolute right-0 bottom-0 text-[14px] font-normal text-black">頁次：{pageIndex + 1} / {itemChunks.length}</span>
-                      )}
-                    </div>
-
-                    {/* 業主資訊 */}
-                    <div className="flex justify-between text-[16px] mb-3 text-black">
-                      <div>
-                        <div className="flex mb-2 items-end">
-                          <span className="w-24">業主名稱：</span>
-                          <span className="min-w-[200px] font-normal inline-block">{currentQuote.clientName}</span>
-                        </div>
-                        <div className="flex items-end">
-                          <span className="w-24">工程名稱：</span>
-                          <span className="min-w-[200px] font-normal inline-block">{currentQuote.projectName}</span>
-                        </div>
-                      </div>
-                      <div>
-                        <div className="flex mb-2 items-end">
-                          <span className="w-16">日期：</span>
-                          <span className="min-w-[140px] font-normal inline-block">{currentQuote.date.replace(/-/g, '/')}</span>
-                        </div>
-                        <div className="flex items-end">
-                          <span className="w-16">統編：</span>
-                          <span className="min-w-[140px] font-normal inline-block">{currentQuote.taxId}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* 表格 */}
-                    <table className="w-full border-collapse border border-black text-[15px] text-black">
-                      <thead>
-                        <tr>
-                          <th className="border border-black p-2 w-12 text-center text-black">項次</th>
-                          <th className="border border-black p-2 text-center text-black">名稱</th>
-                          <th className="border border-black p-2 w-14 text-center text-black">單位</th>
-                          <th className="border border-black p-2 w-16 text-center text-black">數量</th>
-                          <th className="border border-black p-2 w-24 text-center text-black">單價</th>
-                          <th className="border border-black p-2 w-28 text-center text-black">複價</th>
-                          <th className="border border-black p-2 w-32 text-center text-black">備註</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {chunk.map((item, idx) => {
-                          const globalIdx = pageIndex * MAX_ROWS + idx;
-                          return (
-                            <tr key={item.id}>
-                              <td className="border border-black p-1.5 text-center font-normal">{globalIdx + 1}</td>
-                              <td className="border border-black p-1.5 font-normal">{item.name}</td>
-                              <td className="border border-black p-1.5 text-center font-normal">{item.unit}</td>
-                              <td className="border border-black p-1.5 text-center font-normal">{item.qty}</td>
-                              <td className="border border-black p-1.5 text-right font-normal">{item.price ? Number(item.price).toLocaleString() : ''}</td>
-                              <td className="border border-black p-1.5 text-right font-normal">
-                                 {(Number(item.qty) && Number(item.price)) ? (Number(item.qty) * Number(item.price)).toLocaleString() : ''}
-                              </td>
-                              <td className="border border-black p-1.5 font-normal">{item.remark}</td>
-                            </tr>
-                          );
-                        })}
-                        {(() => {
-                          const blanksNeeded = isLastPage 
-                            ? MAX_ROWS - chunk.length - summaryRowsCount 
-                            : MAX_ROWS - chunk.length;
+              /* 動態縮放的 Wrapper，讓他在手機上能被完整看見，但保留真實的 DOM 尺寸給 PDF 套件截圖 */
+              <div key={pageIndex} style={{ width: `${794 * previewScale}px`, height: `${1123 * previewScale}px`, position: 'relative' }}>
+                 <div style={{ transform: `scale(${previewScale})`, transformOrigin: 'top left', position: 'absolute', top: 0, left: 0, width: '794px', height: '1123px' }}>
+                    <div className="pdf-page-container bg-white shadow-2xl" style={{ width: '794px', height: '1123px', padding: '15px 26px' }}>
+                       {/* 注入 Google Font 雲端字體 LXGW WenKai TC (霞鶩文楷) */}
+                       <div className="bg-white text-black font-bold relative" style={{ width: '742px', height: '1093px', padding: '8px 19px', boxSizing: 'border-box', fontFamily: "'LXGW WenKai TC', 'Kaiti TC', 'STKaiti', 'BiauKai', 'DFKai-SB', 'KaiTi', serif" }}>
                           
-                          return [...Array(Math.max(0, blanksNeeded))].map((_, idx) => (
-                            <tr key={`empty-${idx}`} style={{ height: '31px' }}>
-                              <td className="border border-black p-1.5 text-center font-normal">{pageIndex * MAX_ROWS + chunk.length + idx + 1}</td>
-                              <td className="border border-black p-1.5 font-normal"></td>
-                              <td className="border border-black p-1.5 font-normal"></td>
-                              <td className="border border-black p-1.5 font-normal"></td>
-                              <td className="border border-black p-1.5 font-normal"></td>
-                              <td className="border border-black p-1.5 font-normal"></td>
-                              <td className="border border-black p-1.5 font-normal"></td>
-                            </tr>
-                          ));
-                        })()}
-                        
-                        {isLastPage ? (
-                           <>
-                             {currentQuote.taxType === 'exclude' && (
-                                <>
-                                  <tr>
-                                    <td colSpan="5" className="border border-black p-2 text-right">小計：NT$</td>
-                                    <td className="border border-black p-2 text-right font-normal">{totals.subtotal.toLocaleString()}</td>
-                                    <td className="border border-black p-2"></td>
+                          {/* 表頭 */}
+                          <div className="text-center mb-2 mt-0">
+                            <h1 className="text-[44px] font-black tracking-widest text-black">超盛工程行</h1>
+                          </div>
+
+                          {/* 聯絡資訊 */}
+                          <div className="flex justify-end mb-4 font-normal">
+                            <div className="text-[14px] leading-tight text-left text-black">
+                              <p>地址：高雄市三民區澄清路649號7F-4</p>
+                              <p>聯絡人：黃耀德 / 0925256521</p>
+                              <p>統編：36905114</p>
+                              <p>E-mail：c1207031@yahoo.com.tw</p>
+                            </div>
+                          </div>
+
+                          {/* 報價單標題 */}
+                          <div className="text-center mb-6 relative">
+                            <h2 className="text-[32px] font-bold tracking-[0.5em] inline-block text-black">報價單</h2>
+                            {itemChunks.length > 1 && (
+                               <span className="absolute right-0 bottom-0 text-[14px] font-normal text-black">頁次：{pageIndex + 1} / {itemChunks.length}</span>
+                            )}
+                          </div>
+
+                          {/* 業主資訊 */}
+                          <div className="flex justify-between text-[16px] mb-3 text-black">
+                            <div>
+                              <div className="flex mb-2 items-end">
+                                <span className="w-24">業主名稱：</span>
+                                <span className="min-w-[200px] font-normal inline-block">{currentQuote.clientName}</span>
+                              </div>
+                              <div className="flex items-end">
+                                <span className="w-24">工程名稱：</span>
+                                <span className="min-w-[200px] font-normal inline-block">{currentQuote.projectName}</span>
+                              </div>
+                            </div>
+                            <div>
+                              <div className="flex mb-2 items-end">
+                                <span className="w-16">日期：</span>
+                                <span className="min-w-[140px] font-normal inline-block">{currentQuote.date.replace(/-/g, '/')}</span>
+                              </div>
+                              <div className="flex items-end">
+                                <span className="w-16">統編：</span>
+                                <span className="min-w-[140px] font-normal inline-block">{currentQuote.taxId}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* 表格 */}
+                          <table className="w-full border-collapse border border-black text-[15px] text-black">
+                            <thead>
+                              <tr>
+                                <th className="border border-black p-2 w-12 text-center text-black">項次</th>
+                                <th className="border border-black p-2 text-center text-black">名稱</th>
+                                <th className="border border-black p-2 w-14 text-center text-black">單位</th>
+                                <th className="border border-black p-2 w-16 text-center text-black">數量</th>
+                                <th className="border border-black p-2 w-24 text-center text-black">單價</th>
+                                <th className="border border-black p-2 w-28 text-center text-black">複價</th>
+                                <th className="border border-black p-2 w-32 text-center text-black">備註</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {chunk.map((item, idx) => {
+                                const globalIdx = pageIndex * MAX_ROWS + idx;
+                                return (
+                                  <tr key={item.id}>
+                                    <td className="border border-black p-1.5 text-center font-normal">{globalIdx + 1}</td>
+                                    <td className="border border-black p-1.5 font-normal">{item.name}</td>
+                                    <td className="border border-black p-1.5 text-center font-normal">{item.unit}</td>
+                                    <td className="border border-black p-1.5 text-center font-normal">{item.qty}</td>
+                                    <td className="border border-black p-1.5 text-right font-normal">{item.price ? Number(item.price).toLocaleString() : ''}</td>
+                                    <td className="border border-black p-1.5 text-right font-normal">
+                                       {(Number(item.qty) && Number(item.price)) ? (Number(item.qty) * Number(item.price)).toLocaleString() : ''}
+                                    </td>
+                                    <td className="border border-black p-1.5 font-normal">{item.remark}</td>
                                   </tr>
-                                  <tr>
-                                    <td colSpan="5" className="border border-black p-2 text-right">稅金 (5%)：NT$</td>
-                                    <td className="border border-black p-2 text-right font-normal">{totals.tax.toLocaleString()}</td>
-                                    <td className="border border-black p-2"></td>
+                                );
+                              })}
+                              {(() => {
+                                const blanksNeeded = isLastPage 
+                                  ? MAX_ROWS - chunk.length - summaryRowsCount 
+                                  : MAX_ROWS - chunk.length;
+                                
+                                return [...Array(Math.max(0, blanksNeeded))].map((_, idx) => (
+                                  <tr key={`empty-${idx}`} style={{ height: '31px' }}>
+                                    <td className="border border-black p-1.5 text-center font-normal">{pageIndex * MAX_ROWS + chunk.length + idx + 1}</td>
+                                    <td className="border border-black p-1.5 font-normal"></td>
+                                    <td className="border border-black p-1.5 font-normal"></td>
+                                    <td className="border border-black p-1.5 font-normal"></td>
+                                    <td className="border border-black p-1.5 font-normal"></td>
+                                    <td className="border border-black p-1.5 font-normal"></td>
+                                    <td className="border border-black p-1.5 font-normal"></td>
                                   </tr>
-                                </>
-                             )}
-                             <tr>
-                                <td colSpan="5" className="border border-black p-2 text-right text-lg">總計：NT$</td>
-                                <td className="border border-black p-2 text-right font-normal text-lg">{totals.total.toLocaleString()}</td>
-                                <td className="border border-black p-2"></td>
-                             </tr>
-                           </>
-                        ) : (
-                           <tr>
-                              <td colSpan="7" className="border border-black p-2 text-center font-normal text-gray-500">
-                                 --- 接續下頁 ---
-                              </td>
-                           </tr>
-                        )}
-                      </tbody>
-                    </table>
+                                ));
+                              })()}
+                              
+                              {isLastPage ? (
+                                 <>
+                                   {currentQuote.taxType === 'exclude' && (
+                                      <>
+                                        <tr>
+                                          <td colSpan="5" className="border border-black p-2 text-right">小計：NT$</td>
+                                          <td className="border border-black p-2 text-right font-normal">{totals.subtotal.toLocaleString()}</td>
+                                          <td className="border border-black p-2"></td>
+                                        </tr>
+                                        <tr>
+                                          <td colSpan="5" className="border border-black p-2 text-right">稅金 (5%)：NT$</td>
+                                          <td className="border border-black p-2 text-right font-normal">{totals.tax.toLocaleString()}</td>
+                                          <td className="border border-black p-2"></td>
+                                        </tr>
+                                      </>
+                                   )}
+                                   <tr>
+                                      <td colSpan="5" className="border border-black p-2 text-right text-lg">總計：NT$</td>
+                                      <td className="border border-black p-2 text-right font-normal text-lg">{totals.total.toLocaleString()}</td>
+                                      <td className="border border-black p-2"></td>
+                                   </tr>
+                                 </>
+                              ) : (
+                                 <tr>
+                                    <td colSpan="7" className="border border-black p-2 text-center font-normal text-gray-500">
+                                       --- 接續下頁 ---
+                                    </td>
+                                 </tr>
+                              )}
+                            </tbody>
+                          </table>
+                       </div>
+                    </div>
                  </div>
               </div>
             );
