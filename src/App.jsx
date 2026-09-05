@@ -597,7 +597,7 @@ export default function App() {
                  <div style={{ transform: `scale(${previewScale})`, transformOrigin: 'top left', position: 'absolute', top: 0, left: 0, width: '794px', height: '1123px' }}>
                     <div className="pdf-page-container bg-white shadow-2xl" style={{ width: '794px', height: '1123px', padding: '15px 26px' }}>
                        {/* 注入 Google Font 雲端字體 LXGW WenKai TC (霞鶩文楷) */}
-                       <div className="bg-white text-black font-bold relative" style={{ width: '742px', height: '1093px', padding: '8px 19px', boxSizing: 'border-box', fontFamily: "'LXGW WenKai TC', 'Kaiti TC', 'STKaiti', 'BiauKai', 'DFKai-SB', 'KaiTi', serif" }}>
+                       <div className="bg-white text-black font-bold relative" style={{ width: '742px', height: '1093px', padding: '8px 19px', boxSizing: 'border-box', fontFamily: "'BiauKai', 'DFKai-SB', 'Kaiti TC', 'STKaiti', 'KaiTi', 'LXGW WenKai TC', serif" }}>
                           
                           {/* 表頭 */}
                           <div className="text-center mb-2 mt-0">
