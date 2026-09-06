@@ -92,11 +92,11 @@ export default function App() {
   // 載入外部字體與 PDF 生成套件
   useEffect(() => {
     const loadDependencies = () => {
-      // 載入 100% 確保有楷體的 Google Web Font (霞鶩文楷)
-      if (!document.getElementById('lxgw-font')) {
+      // 載入 100% 確保有標楷體的 Google Web Font (cwTeXKai)
+      if (!document.getElementById('cwtexkai-font')) {
         const fontLink = document.createElement('link');
-        fontLink.id = 'lxgw-font';
-        fontLink.href = 'https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&display=swap';
+        fontLink.id = 'cwtexkai-font';
+        fontLink.href = 'https://fonts.googleapis.com/earlyaccess/cwtexkai.css';
         fontLink.rel = 'stylesheet';
         document.head.appendChild(fontLink);
       }
@@ -596,8 +596,8 @@ export default function App() {
               <div key={pageIndex} style={{ width: `${794 * previewScale}px`, height: `${1123 * previewScale}px`, position: 'relative' }}>
                  <div style={{ transform: `scale(${previewScale})`, transformOrigin: 'top left', position: 'absolute', top: 0, left: 0, width: '794px', height: '1123px' }}>
                     <div className="pdf-page-container bg-white shadow-2xl" style={{ width: '794px', height: '1123px', padding: '15px 26px' }}>
-                       {/* 注入 Google Font 雲端字體 LXGW WenKai TC (霞鶩文楷) */}
-                       <div className="bg-white text-black font-bold relative" style={{ width: '742px', height: '1093px', padding: '8px 19px', boxSizing: 'border-box', fontFamily: "'BiauKai', 'DFKai-SB', 'Kaiti TC', 'STKaiti', 'KaiTi', 'LXGW WenKai TC', serif" }}>
+                       {/* 注入 Google Font 雲端標楷體 cwTeXKai */}
+                       <div className="bg-white text-black font-bold relative" style={{ width: '742px', height: '1093px', padding: '8px 19px', boxSizing: 'border-box', fontFamily: "'cwTeXKai', 'BiauKai', 'DFKai-SB', 'Kaiti TC', 'STKaiti', 'KaiTi', serif" }}>
                           
                           {/* 表頭 */}
                           <div className="text-center mb-2 mt-0">
