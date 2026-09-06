@@ -89,18 +89,9 @@ export default function App() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [previewScale, setPreviewScale] = useState(1);
 
-  // 載入外部字體與 PDF 生成套件
+  // 載入外部 PDF 生成套件
   useEffect(() => {
     const loadDependencies = () => {
-      // 載入 100% 確保有標楷體的 Google Web Font (cwTeXKai)
-      if (!document.getElementById('cwtexkai-font')) {
-        const fontLink = document.createElement('link');
-        fontLink.id = 'cwtexkai-font';
-        fontLink.href = 'https://fonts.googleapis.com/earlyaccess/cwtexkai.css';
-        fontLink.rel = 'stylesheet';
-        document.head.appendChild(fontLink);
-      }
-      
       if (!window.html2canvas) {
         const script1 = document.createElement('script');
         script1.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
@@ -596,8 +587,8 @@ export default function App() {
               <div key={pageIndex} style={{ width: `${794 * previewScale}px`, height: `${1123 * previewScale}px`, position: 'relative' }}>
                  <div style={{ transform: `scale(${previewScale})`, transformOrigin: 'top left', position: 'absolute', top: 0, left: 0, width: '794px', height: '1123px' }}>
                     <div className="pdf-page-container bg-white shadow-2xl" style={{ width: '794px', height: '1123px', padding: '15px 26px' }}>
-                       {/* 注入 Google Font 雲端標楷體 cwTeXKai 作為保底 (iPhone) */}
-                       <div className="bg-white text-black font-bold relative" style={{ width: '742px', height: '1093px', padding: '8px 19px', boxSizing: 'border-box', fontFamily: "'DFKai-SB', 'BiauKai', 'cwTeXKai', 'Kaiti TC', 'STKaiti', 'KaiTi', serif" }}>
+                       {/* 優先使用原生標楷體，無原生楷體(如Android/Linux)再退回 Google Font cwTeXKai 保底 */}
+                       <div className="bg-white text-black font-bold relative" style={{ width: '742px', height: '1093px', padding: '8px 19px', boxSizing: 'border-box', fontFamily: "'DFKai-SB', 'BiauKai', 'Kaiti TC', 'KaiTi', 'cwTeXKai', serif" }}>
                           
                           {/* 表頭 */}
                           <div className="text-center mb-2 mt-0">
