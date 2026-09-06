@@ -596,8 +596,8 @@ export default function App() {
               <div key={pageIndex} style={{ width: `${794 * previewScale}px`, height: `${1123 * previewScale}px`, position: 'relative' }}>
                  <div style={{ transform: `scale(${previewScale})`, transformOrigin: 'top left', position: 'absolute', top: 0, left: 0, width: '794px', height: '1123px' }}>
                     <div className="pdf-page-container bg-white shadow-2xl" style={{ width: '794px', height: '1123px', padding: '15px 26px' }}>
-                       {/* 注入 Google Font 雲端標楷體 cwTeXKai */}
-                       <div className="bg-white text-black font-bold relative" style={{ width: '742px', height: '1093px', padding: '8px 19px', boxSizing: 'border-box', fontFamily: "'cwTeXKai', 'BiauKai', 'DFKai-SB', 'Kaiti TC', 'STKaiti', 'KaiTi', serif" }}>
+                       {/* 注入 Google Font 雲端標楷體 cwTeXKai 作為保底 (iPhone) */}
+                       <div className="bg-white text-black font-bold relative" style={{ width: '742px', height: '1093px', padding: '8px 19px', boxSizing: 'border-box', fontFamily: "'DFKai-SB', 'BiauKai', 'cwTeXKai', 'Kaiti TC', 'STKaiti', 'KaiTi', serif" }}>
                           
                           {/* 表頭 */}
                           <div className="text-center mb-2 mt-0">
