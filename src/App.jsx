@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+/* global __app_id, __initial_auth_token */
+import { useState, useEffect, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc } from 'firebase/firestore';
-import { Plus, Copy, Edit, Trash2, ArrowLeft, Share2, Save, Download, FileText } from 'lucide-react';
+import { Plus, Copy, Edit, Trash2, ArrowLeft, Share2, Save, FileText } from 'lucide-react';
 
 // --- Firebase Initialization ---
 // ⚠️ 請在這裡貼回您的真實 Firebase 密碼
@@ -301,7 +302,8 @@ export default function App() {
           scale: 2,
           useCORS: true,
           logging: false,
-          backgroundColor: '#ffffff'
+          backgroundColor: '#ffffff',
+          windowWidth: 1024
         });
         
         const imgData = canvas.toDataURL('image/png');
@@ -407,11 +409,11 @@ export default function App() {
     return (
       <div className="min-h-screen bg-gray-50 pb-32" style={{ colorScheme: 'light' }}>
         <header className="bg-white p-4 shadow-sm sticky top-0 z-10 flex justify-between items-center border-b-2 border-gray-200">
-          <button onClick={() => setView('list')} className="p-2 text-gray-600 active:bg-gray-100 rounded-full">
+          <button onClick={() => setView('list')} className="p-3 text-gray-600 active:bg-gray-100 rounded-full">
             <ArrowLeft size={28} />
           </button>
           <h1 className="text-xl font-bold text-black">編輯報價單</h1>
-          <button onClick={async () => { await handleSaveQuote(); setView('list'); }} className="p-2 text-blue-600 active:bg-blue-50 rounded-full">
+          <button onClick={async () => { await handleSaveQuote(); setView('list'); }} className="p-3 text-blue-600 active:bg-blue-50 rounded-full">
             <Save size={28} />
           </button>
         </header>
@@ -441,7 +443,7 @@ export default function App() {
                   {index + 1}
                 </div>
                 {currentQuote.items.length > 1 && (
-                  <button onClick={() => removeItem(index)} className="absolute top-2 right-2 text-red-500 p-2">
+                  <button onClick={() => removeItem(index)} className="absolute top-2 right-2 text-red-500 p-3">
                     <Trash2 size={24} />
                   </button>
                 )}
@@ -568,6 +570,7 @@ export default function App() {
       
       if (remainingItems + summaryRowsCount <= MAX_ROWS) {
         itemChunks.push(currentQuote.items.slice(i, i + remainingItems));
+        // eslint-disable-next-line no-useless-assignment
         isSummaryPlaced = true;
         break;
       } else {
@@ -579,8 +582,13 @@ export default function App() {
 
     return (
       <div className="min-h-screen bg-gray-600 pb-32" style={{ colorScheme: 'light' }}>
+         {isGenerating && (
+           <div className="fixed inset-0 z-50 bg-black/50 flex flex-col items-center justify-center text-white">
+             <div className="text-2xl font-bold mb-4">產生 PDF 中，請稍候...</div>
+           </div>
+         )}
          <header className="bg-white p-4 shadow-sm sticky top-0 z-30 flex justify-between items-center">
-          <button onClick={() => setView('edit')} className="p-2 text-gray-600 active:bg-gray-100 rounded-full">
+          <button onClick={() => setView('edit')} className="p-3 text-gray-600 active:bg-gray-100 rounded-full">
             <ArrowLeft size={28} />
           </button>
           <h1 className="text-xl font-bold text-black">報價單預覽</h1>
@@ -593,8 +601,8 @@ export default function App() {
 
             return (
               /* 動態縮放的 Wrapper，讓他在手機上能被完整看見，但保留真實的 DOM 尺寸給 PDF 套件截圖 */
-              <div key={pageIndex} style={{ width: `${794 * previewScale}px`, height: `${1123 * previewScale}px`, position: 'relative' }}>
-                 <div style={{ transform: `scale(${previewScale})`, transformOrigin: 'top left', position: 'absolute', top: 0, left: 0, width: '794px', height: '1123px' }}>
+              <div key={pageIndex} style={{ width: isGenerating ? '794px' : `${794 * previewScale}px`, height: isGenerating ? '1123px' : `${1123 * previewScale}px`, position: 'relative' }}>
+                 <div style={{ transform: isGenerating ? 'none' : `scale(${previewScale})`, transformOrigin: 'top left', position: 'absolute', top: 0, left: 0, width: '794px', height: '1123px' }}>
                     <div className="pdf-page-container bg-white shadow-2xl" style={{ width: '794px', height: '1123px', padding: '15px 26px' }}>
                        {/* 注入 Google Font 雲端字體 LXGW WenKai TC (霞鶩文楷) */}
                        <div className="bg-white text-black font-bold relative" style={{ width: '742px', height: '1093px', padding: '8px 19px', boxSizing: 'border-box', fontFamily: "'LXGW WenKai TC', 'Kaiti TC', 'STKaiti', 'BiauKai', 'DFKai-SB', 'KaiTi', serif" }}>
