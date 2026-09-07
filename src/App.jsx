@@ -605,11 +605,11 @@ export default function App() {
                  <div style={{ transform: isGenerating ? 'none' : `scale(${previewScale})`, transformOrigin: 'top left', position: 'absolute', top: 0, left: 0, width: '794px', height: '1123px' }}>
                     <div className="pdf-page-container bg-white shadow-2xl" style={{ width: '794px', height: '1123px', padding: '15px 26px' }}>
                        {/* 注入 Google Font 雲端字體 LXGW WenKai TC (霞鶩文楷) */}
-                       <div className="bg-white text-black font-bold relative" style={{ width: '742px', height: '1093px', padding: '8px 19px', boxSizing: 'border-box', fontFamily: "'LXGW WenKai TC', 'Kaiti TC', 'STKaiti', 'BiauKai', 'DFKai-SB', 'KaiTi', serif" }}>
+                       <div className="bg-white text-black font-normal relative" style={{ width: '742px', height: '1093px', padding: '8px 19px', boxSizing: 'border-box', fontFamily: "'LXGW WenKai TC', 'Kaiti TC', 'STKaiti', 'BiauKai', 'DFKai-SB', 'KaiTi', serif" }}>
                           
                           {/* 表頭 */}
                           <div className="text-center mb-2 mt-0">
-                            <h1 className="text-[44px] font-black tracking-widest text-black">超盛工程行</h1>
+                            <h1 className="text-[44px] font-normal tracking-widest text-black" style={{ WebkitTextStroke: '1px black' }}>超盛工程行</h1>
                           </div>
 
                           {/* 聯絡資訊 */}
@@ -624,7 +624,7 @@ export default function App() {
 
                           {/* 報價單標題 */}
                           <div className="text-center mb-6 relative">
-                            <h2 className="text-[32px] font-bold tracking-[0.5em] inline-block text-black">報價單</h2>
+                            <h2 className="text-[32px] font-normal tracking-[0.5em] inline-block text-black" style={{ WebkitTextStroke: '0.5px black' }}>報價單</h2>
                             {itemChunks.length > 1 && (
                                <span className="absolute right-0 bottom-0 text-[14px] font-normal text-black">頁次：{pageIndex + 1} / {itemChunks.length}</span>
                             )}
