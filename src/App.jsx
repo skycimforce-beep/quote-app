@@ -609,7 +609,7 @@ export default function App() {
                           
                           {/* 表頭 */}
                           <div className="text-center mb-2 mt-0">
-                            <h1 className="text-[44px] font-normal tracking-widest text-black" style={{ WebkitTextStroke: '1px black' }}>超盛工程行</h1>
+                            <h1 className="text-[44px] font-bold tracking-widest text-black" style={{ fontFamily: "'LXGW WenKai TC', serif" }}>超盛工程行</h1>
                           </div>
 
                           {/* 聯絡資訊 */}
@@ -624,7 +624,7 @@ export default function App() {
 
                           {/* 報價單標題 */}
                           <div className="text-center mb-6 relative">
-                            <h2 className="text-[32px] font-normal tracking-[0.5em] inline-block text-black" style={{ WebkitTextStroke: '0.5px black' }}>報價單</h2>
+                            <h2 className="text-[32px] font-bold tracking-[0.5em] inline-block text-black" style={{ fontFamily: "'LXGW WenKai TC', serif" }}>報價單</h2>
                             {itemChunks.length > 1 && (
                                <span className="absolute right-0 bottom-0 text-[14px] font-normal text-black">頁次：{pageIndex + 1} / {itemChunks.length}</span>
                             )}
